@@ -29,6 +29,12 @@ impl LuaModule for Test {
 			}));
 			lua.set_field(-2, c"panic");
 
+			lua.push_c_function(gmod13_lua_function!(lua => {
+				let value = lua.get_bool(1);
+				lua.push_bool(value);
+				1
+			}));
+			lua.set_field(-2, c"to_bool");
 		}
 		lua.set_field(-2, c"test");
 	}

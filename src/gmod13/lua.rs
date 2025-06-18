@@ -8,7 +8,11 @@ use core::{
 	fmt,
 	marker::PhantomData,
 	mem::MaybeUninit,
-	slice::from_raw_parts_mut as slice_from_raw_parts_mut,
+	ptr::null_mut,
+	slice::{
+		from_raw_parts as slice_from_raw_parts,
+		from_raw_parts_mut as slice_from_raw_parts_mut,
+	},
 };
 use cppdvt::{
 	VtObject, virtual_call,
@@ -160,7 +164,7 @@ impl Lua<'_> {
 	
 	/// Move the value at the top of the stack into `stack_pos`,
 	/// shifting upwards any elements above `stack_pos`.
-	pub fn insert(&mut self, stack_pos: c_int) {
+	pub fn insert(&self, stack_pos: c_int) {
 		unsafe { virtual_call!(self.luabase, insert, stack_pos) }
 	}
 
@@ -195,13 +199,58 @@ impl Lua<'_> {
 		unsafe { virtual_call!(self.luabase, arg_error, arg_num, message.as_ptr()) }
 	}
 
-	// TODO: arg_error
-	// TODO: raw_get
-	// TODO: raw_set
-	// TODO: get_string
-	// TODO: get_number
-	// TODO: get_bool
-	// TODO: get_c_function
+	pub fn raw_get(&self, stack_pos: c_int) {
+		unsafe { virtual_call!(self.luabase, raw_get, stack_pos) }
+	}
+
+	/// Without metamethods, do t[k] = v, where t is the value at the given index, v is the value on the top of the stack, and k is the value just below the top.
+	pub fn raw_set(&self, stack_pos: c_int) {
+		unsafe { virtual_call!(self.luabase, raw_set, stack_pos) }
+	}
+
+	/// Return the contents of the Lua string at `stack_pos`,
+	/// converting any Lua number at that position to a string in the process,
+	/// or return `None` if the value can't be converted to a Lua string.
+	pub fn get_string(&self, stack_pos: c_int) -> Option<&[u8]> {
+		let mut len = MaybeUninit::uninit();
+		let string_ptr = unsafe { virtual_call!(self.luabase, get_string, stack_pos, len.as_mut_ptr()) };
+		if !string_ptr.is_null() {
+			// SAFETY: If `string_ptr` isn't null, then it should be valid for reads, and `len` should be initialized.
+			unsafe { Some(slice_from_raw_parts(string_ptr as *const _, len.assume_init() as _)) }
+		} else {
+			None
+		}
+	}
+
+	/// Return the Lua C string at `stack_pos`,
+	/// converting any Lua number at that position to a string in the process,
+	/// or return `None` if the value can't be converted to a Lua string.
+	pub fn get_c_string(&self, stack_pos: c_int) -> Option<&CStr> {
+		let string_ptr = unsafe { virtual_call!(self.luabase, get_string, stack_pos, null_mut()) };
+		if !string_ptr.is_null() {
+			// SAFETY: If `string_ptr` isn't null, then it should be a valid C string.
+			unsafe { Some(CStr::from_ptr(string_ptr)) }
+		} else {
+			None
+		}
+	}
+
+	/// Return the number at `stack_pos`,
+	/// or `0.0` if the value isn't a Lua number.
+	pub fn get_number(&self, stack_pos: c_int) -> c_double {
+		unsafe { virtual_call!(self.luabase, get_number, stack_pos) }
+	}
+
+	/// Return `true` if the value at `stack_pos` is truthy.
+	pub fn get_bool(&self, stack_pos: c_int) -> bool {
+		unsafe { virtual_call!(self.luabase, get_bool, stack_pos) } 
+	}
+
+	/// Return the [`CFunc`] at `stack_pos`,
+	/// or a null pointer if the value isn't a C function.
+	pub fn get_c_function(&self, stack_pos: c_int) -> Option<CFunc> {
+		unsafe { virtual_call!(self.luabase, get_c_function, stack_pos) }
+	}
 
 	/// Return the non-null pointer to the userdata at `stack_pos`,
 	/// or a null pointer if the value isn't userdata.
@@ -213,7 +262,7 @@ impl Lua<'_> {
 	/// 
 	/// # Errors
 	/// The inner Lua state may raise an [error](crate::errors).
-	pub fn push_nil(&mut self) {
+	pub fn push_nil(&self) {
 		unsafe { virtual_call!(self.luabase, push_nil) }
 	}
 
@@ -263,7 +312,7 @@ impl Lua<'_> {
 	/// 
 	/// # Errors
 	/// The inner Lua state may raise an [error](crate::errors).
-	pub fn push_number(&mut self, n: c_double) {
+	pub fn push_number(&self, n: c_double) {
 		unsafe { virtual_call!(self.luabase, push_number, n) }
 	}
 
@@ -271,7 +320,7 @@ impl Lua<'_> {
 	/// 
 	/// # Errors
 	/// The inner Lua state may raise an [error](crate::errors).
-	pub fn push_bool(&mut self, b: bool) {
+	pub fn push_bool(&self, b: bool) {
 		unsafe { virtual_call!(self.luabase, push_bool, b) }
 	}
 	
@@ -288,7 +337,7 @@ impl Lua<'_> {
 	/// 
 	/// # Errors
 	/// The inner Lua state may raise an [error](crate::errors).
-	pub fn push_c_closure(&self, func: CFunc, n_upvalues: u8) {
+	pub fn push_c_closure(&mut self, func: CFunc, n_upvalues: u8) {
 		unsafe { virtual_call!(self.luabase, push_c_closure, func, n_upvalues as _) }
 	}
 
@@ -301,7 +350,7 @@ impl Lua<'_> {
 	/// `ptr` is a plain pointer value that can be accessed at any later point in time,
 	/// and so the exact guarantees for `ptr` vary depending on the use-case.
 	/// Consider using full userdata instead if you can.
-	pub unsafe fn push_light_userdata(&mut self, ptr: *mut c_void) {
+	pub unsafe fn push_light_userdata(&self, ptr: *mut c_void) {
 		virtual_call!(self.luabase, push_userdata, ptr)
 	}
 	
@@ -321,7 +370,7 @@ impl Lua<'_> {
 	/// 
 	/// # Errors
 	/// The inner Lua state may raise an [error](crate::errors).
-	pub fn free_ref(&mut self, lua_ref: LuaRef) {
+	pub fn free_ref(&self, lua_ref: LuaRef) {
 		unsafe { virtual_call!(self.luabase, reference_free, lua_ref.0) }
 	}
 
@@ -338,7 +387,7 @@ impl Lua<'_> {
 	/// 
 	/// # Errors
 	/// The inner Lua state may raise an [error](crate::errors).
-	pub fn push_special(&mut self, what: Special) {
+	pub fn push_special(&self, what: Special) {
 		unsafe { virtual_call!(self.luabase, push_special, what as _) }
 	}
 
@@ -427,7 +476,7 @@ impl Lua<'_> {
 	/// # Errors
 	/// The inner Lua state may raise an [error](crate::errors).
 	// TODO: What happens when it doesn't exist?
-	pub fn push_metatable(&mut self, ty: impl Into<Type>) -> bool {
+	pub fn push_metatable(&self, ty: impl Into<Type>) -> bool {
 		unsafe { virtual_call!(self.luabase, push_meta_table, ty.into().0) }
 	}
 
@@ -479,7 +528,7 @@ impl Lua<'_> {
 	/// 
 	/// # Errors
 	/// The inner Lua state may raise an [error](crate::errors).
-	pub fn set_top(&mut self, top: c_uint) {
+	pub fn set_top(&self, top: c_uint) {
 		let current_top = self.top();
 		match top.cmp(&current_top) {
 			Ordering::Less => self.pop(current_top - top),
@@ -500,7 +549,7 @@ impl Lua<'_> {
 	/// # Errors
 	/// The inner Lua state may raise an [error](crate::errors).
 	#[inline]
-	pub fn push_globals(&mut self) {
+	pub fn push_globals(&self) {
 		self.push_special(Special::Glob)
 	}
 
@@ -512,7 +561,7 @@ impl Lua<'_> {
 	/// # Errors
 	/// The inner Lua state may raise an [error](crate::errors).
 	#[inline]
-	pub fn push_environment(&mut self) {
+	pub fn push_environment(&self) {
 		self.push_special(Special::Env)
 	}
 
@@ -524,7 +573,7 @@ impl Lua<'_> {
 	/// # Errors
 	/// The inner Lua state may raise an [error](crate::errors).
 	#[inline]
-	pub fn push_registry(&mut self) {
+	pub fn push_registry(&self) {
 		self.push_special(Special::Registry)
 	}
 
@@ -538,7 +587,7 @@ impl Lua<'_> {
 	/// # Errors
 	/// The inner Lua state may raise an [error](crate::errors).
 	#[inline]
-	pub fn push_upvalue(&mut self, n: u8) {
+	pub fn push_upvalue(&self, n: u8) {
 		self.push_value(upvalue_index(n))
 	}
 }

@@ -85,7 +85,7 @@ vtable! {
 		pub fn get_string(stack_pos: c_int, out_len: *mut c_uint) -> *const c_char;
 		pub fn get_number(stack_pos: c_int) -> c_double;
 		pub fn get_bool(stack_pos: c_int) -> bool;
-		pub fn get_c_function(stack_pos: c_int) -> CFunc;
+		pub fn get_c_function(stack_pos: c_int) -> Option<CFunc>;
 		pub fn get_userdata(stack_pos: c_int) -> *mut c_void;
 		pub fn push_nil();
 		pub fn push_string(val: *const c_char, len: c_int);
