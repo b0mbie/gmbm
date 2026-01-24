@@ -4,7 +4,7 @@ pub mod cppdef;
 mod lua;
 pub use lua::*;
 
-/// Return a [`CFunc`](cppdef::CFunc) that can be used by Lua,
+/// Returns a [`CFunc`](cppdef::CFunc) that can be used by Lua,
 /// given a function definition similar to a Rust closure.
 /// 
 /// # Examples
@@ -21,9 +21,9 @@ macro_rules! gmod13_lua_function {
 	($lua:pat => $body:tt) => {{
 		#[allow(unsafe_op_in_unsafe_fn)]
 		unsafe extern "C-unwind" fn __gmod13_lua_function(
-			state: *mut ::gmbm::gmod13::cppdef::LuaState,
+			state: *mut $crate::gmod13::cppdef::LuaState,
 		) -> ::core::ffi::c_int {
-			let $lua = unsafe { ::gmbm::gmod13::Lua::from_ptr_mut((*state).api_ptr()) };
+			let $lua = unsafe { $crate::gmod13::Lua::from_mut_ptr(state) };
 			$body
 		}
 		__gmod13_lua_function
@@ -35,24 +35,25 @@ macro_rules! gmod13_lua_function {
 // Using Rust modules for this would be confusing since it would require a structure defined in prose.
 pub trait Module {
 	/// Function called when the binary module is first loaded.
-	fn open(lua: &mut Lua);
+	fn open(&mut self, lua: &mut Lua);
 
 	/// Function called when the binary module is unloaded.
 	// TODO: Clarify when exactly a binary module is unloaded!
-	fn close(lua: &mut Lua) {
+	fn close(&mut self, lua: &mut Lua) {
 		let _ = lua;
 	}
 }
 
-/// Export `gmod13_*` C++ entrypoint functions that redirect to the given type implementing [`Module`].
+/// Exports `gmod13_*` C++ entrypoint functions that redirect to
+/// the given type which implements [`Module`].
 /// 
 /// # Examples
 /// ```
 /// use gmbm::prelude::*;
 /// 
-/// enum Hello {}
+/// struct Hello;
 /// impl LuaModule for Hello {
-/// 	fn open(lua: &mut Lua) {
+/// 	fn open(&mut self, lua: &mut Lua) {
 /// 		lua.push_globals();
 /// 		let mut lgc = lua.with_gc();
 /// 		lgc.push_string("Hello, Garry's Mod!");
@@ -60,27 +61,56 @@ pub trait Module {
 /// 	}
 /// }
 /// 
-/// gmod13_module!(Hello);
+/// gmod13_module!(Hello = Hello);
 /// ```
 #[macro_export]
 macro_rules! gmod13_module {
-	($module:ty) => {
+	($Module:ty = $init:expr) => {
+		const _: () = {
+			static mut EXPORTED_GMOD13_MODULE: $Module = $init;
+			$crate::gmod13_module_from!(unsafe { &mut *&raw mut EXPORTED_GMOD13_MODULE });
+		};
+	};
+}
+
+/// Exports `gmod13_*` C++ entrypoint functions that redirect to
+/// the given expression which implements [`Module`].
+/// 
+/// # Examples
+/// ```
+/// use gmbm::prelude::*;
+/// 
+/// struct Hello;
+/// impl LuaModule for Hello {
+/// 	fn open(&mut self, lua: &mut Lua) {
+/// 		lua.push_globals();
+/// 		let mut lgc = lua.with_gc();
+/// 		lgc.push_string("Hello, Garry's Mod!");
+/// 		lgc.set_field(-2, c"GREETING");
+/// 	}
+/// }
+/// 
+/// gmod13_module_from!(&mut Hello);
+/// ```
+#[macro_export]
+macro_rules! gmod13_module_from {
+	($module:expr) => {
 		const _: () = {
 			#[unsafe(export_name = "gmod13_open")]
-			pub unsafe extern "C-unwind" fn gmod13_open(
-				state: *mut ::gmbm::gmod13::cppdef::LuaState,
+			unsafe extern "C-unwind" fn gmod13_open(
+				state: *mut $crate::gmod13::cppdef::LuaState,
 			) -> ::core::ffi::c_int {
-				let lua = unsafe { ::gmbm::gmod13::Lua::from_ptr_mut((*state).api_ptr()) };
-				unsafe { <$module as ::gmbm::gmod13::Module>::open(lua); }
+				let lua = unsafe { $crate::gmod13::Lua::from_mut_ptr(state) };
+				$crate::gmod13::Module::open($module, lua);
 				0
 			}
 	
 			#[unsafe(export_name = "gmod13_close")]
-			pub unsafe extern "C-unwind" fn gmod13_close(
-				state: *mut ::gmbm::gmod13::cppdef::LuaState,
+			unsafe extern "C-unwind" fn gmod13_close(
+				state: *mut $crate::gmod13::cppdef::LuaState,
 			) -> ::core::ffi::c_int {
-				let lua = unsafe { ::gmbm::gmod13::Lua::from_ptr_mut((*state).api_ptr()) };
-				unsafe { <$module as ::gmbm::gmod13::Module>::close(lua); }
+				let lua = unsafe { $crate::gmod13::Lua::from_mut_ptr(state) };
+				$crate::gmod13::Module::close($module, lua);
 				0
 			}
 		};

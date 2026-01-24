@@ -1,8 +1,8 @@
 use gmbm::prelude::*;
 
-pub enum Test {}
+pub struct Test;
 impl LuaModule for Test {
-	fn open(lua: &mut Lua) {
+	fn open(&mut self, lua: &mut Lua) {
 		let mut lgc = lua.with_gc();
 		lgc.push_globals();
 		{
@@ -49,4 +49,4 @@ impl LuaModule for Test {
 		lgc.set_field(-2, c"test");
 	}
 }
-gmod13_module!(Test);
+gmod13_module!(Test = Test);

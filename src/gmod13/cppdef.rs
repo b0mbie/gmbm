@@ -7,13 +7,14 @@ use core::{
 	ptr::NonNull,
 };
 use cppdvt::{
-	VtObject, vtable,
+	VtObjectPtr, vtable,
 };
 
 use crate::source::{
 	Vector, QAngle,
 };
 
+/// Special value in the Lua state.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(C)]
 pub enum Special {
@@ -38,17 +39,7 @@ pub struct LuaState {
 	// The entrypoints could just have this object as an additional argument.
 	// Especially considering that `SetState` exists, and these entrypoints are special in some way.
 	// INVARIANT: The pointer is valid as a C++ object with a virtual function table.
-	luabase: VtObject<LuaBaseVt>,
-}
-
-impl LuaState {
-	/// Return the raw pointer representing the Lua API that this structure targets.
-	/// 
-	/// See [`Lua`](super::lua::Lua).
-	#[inline]
-	pub const fn api_ptr(&self) -> VtObject<LuaBaseVt> {
-		self.luabase
-	}
+	pub luabase: VtObjectPtr<LuaBaseVt>,
 }
 
 /// Type of C (or native) functions that can be executed by Lua.
@@ -101,7 +92,7 @@ vtable! {
 		pub fn is_type(stack_pos: c_int, ty: c_int) -> bool;
 		pub fn get_type(stack_pos: c_int) -> c_int;
 		pub fn get_type_name(ty: c_int) -> *const c_char;
-		fn _create_meta_table_type(name: *const c_char, ty: c_int);
+		pub fn create_meta_table_type(name: *const c_char, ty: c_int);
 		pub fn check_string(stack_pos: c_int) -> *const c_char;
 		pub fn check_number(stack_pos: c_int) -> c_double;
 		pub fn obj_len(stack_pos: c_int) -> c_int;
@@ -117,18 +108,18 @@ vtable! {
 	}
 }
 
-/// Wrapper for types returned by the Garry's Mod Lua API.
+/// Type returned by the Garry's Mod Lua API.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
 pub struct Type(pub c_int);
 
 impl Type {
-	/// Return a [`Type`] that represents the specified [`StdType`].
+	/// Returns a [`Type`] that represents the specified [`StdType`].
 	pub const fn from_std(ty: StdType) -> Self {
 		Self(ty as c_int)
 	}
 
-	/// Return `true` if this type is the specified [`StdType`].
+	/// Returns `true` if this type is the specified [`StdType`].
 	pub const fn is_std(&self, ty: StdType) -> bool {
 		self.0 == (ty as c_int)
 	}
@@ -151,7 +142,7 @@ impl PartialEq<Type> for StdType {
 	}
 }
 
-/// Enumeration of pre-defined types in Garry's Mod Lua.
+/// Pre-defined type in Garry's Mod Lua.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(C)]
 pub enum StdType {

@@ -16,5 +16,6 @@ pub use crate::{
 		Vector as SeVector,
 		QAngle as SeQAngle,
 	},
-	gmod13_lua_function, gmod13_module,
+	gmod13_lua_function,
+	gmod13_module, gmod13_module_from,
 };
