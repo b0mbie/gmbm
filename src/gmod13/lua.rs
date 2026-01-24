@@ -337,9 +337,21 @@ impl Lua {
 		unsafe { virtual_call!(self.luabase() => push_meta_table(ty.into().0)) }
 	}
 
-	// TODO: Something with UserTypes?
-	// TODO: push_user_type
-	// TODO: set_user_type
+	/// Pushes userdata of type `ty` referencing the data at `ptr`.
+	/// 
+	/// # Safety
+	/// `ptr` must be valid for values of type `ty`.
+	pub unsafe fn push_user_type<T>(&self, ptr: *mut T, ty: Type) {
+		unsafe { virtual_call!(self.luabase() => push_user_type(ptr as *mut _, ty.0)) }
+	}
+
+	/// Sets the data pointer of the userdata value at `stack_pos` to `ptr`.
+	/// 
+	/// # Safety
+	/// `ptr` must be valid for values of type `ty`.
+	pub unsafe fn set_user_type<T>(&self, stack_pos: c_int, ptr: *mut T) {
+		unsafe { virtual_call!(self.luabase() => set_user_type(stack_pos, ptr as *mut _)) }
+	}
 
 	/// Returns a [`WithGc`] context for
 	/// actions that could possibly run the garbage collector
