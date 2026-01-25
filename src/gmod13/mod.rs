@@ -68,7 +68,8 @@ macro_rules! gmod13_module {
 	($Module:ty = $init:expr) => {
 		const _: () = {
 			static mut EXPORTED_GMOD13_MODULE: $Module = $init;
-			$crate::gmod13_module_from!(unsafe { &mut *&raw mut EXPORTED_GMOD13_MODULE });
+			// SAFETY: `gmod13_*` functions are always called from a single thread.
+			$crate::gmod13_module_from!(unsafe { &mut *::core::ptr::addr_of_mut!(EXPORTED_GMOD13_MODULE) });
 		};
 	};
 }
