@@ -6,10 +6,6 @@ description = "Write Garry's Mod Binary Modules in Rust"
 authors = ["b0mbie"]
 license = "MIT"
 
-[[example]]
-name = "test"
-crate-type = ["cdylib"]
-
 [dependencies.cppdvt]
 git = "https://github.com/b0mbie/cppdvt.git"
 version = "0.8.0"
