@@ -29,7 +29,7 @@ pub type Func = extern "C-unwind" fn(cx: Ctx<'_>) -> Rets;
 /// 
 /// # Examples
 /// ```
-/// # use gmbm::{Func, gmod13_fn};
+/// # use gmbm::{gmod13::func::Func, gmod13_fn};
 /// let _: Func = gmod13_fn!(mut lua => {
 ///     lua.push_string("Hey every    !");
 ///     1

@@ -39,9 +39,8 @@ pub trait Module {
 /// impl LuaModule for Hello {
 ///     fn open(&mut self, lua: &mut Lua) {
 ///         lua.push_globals();
-///         let mut lgc = lua.with_gc();
-///         lgc.push_string("Hello, Garry's Mod!");
-///         lgc.set_field(-2, c"GREETING");
+///         lua.push_string("Hello, Garry's Mod!");
+///         lua.set_field(-2, c"GREETING");
 ///     }
 /// }
 /// 
@@ -107,9 +106,8 @@ macro_rules! gmod13_module_static {
 /// impl LuaModule for Hello {
 ///     fn open(&mut self, lua: &mut Lua) {
 ///         lua.push_globals();
-///         let mut lgc = lua.with_gc();
-///         lgc.push_string("Hello, Garry's Mod!");
-///         lgc.set_field(-2, c"GREETING");
+///         lua.push_string("Hello, Garry's Mod!");
+///         lua.set_field(-2, c"GREETING");
 ///     }
 /// }
 /// 
