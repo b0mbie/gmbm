@@ -1,4 +1,3 @@
-#![allow(clippy::tabs_in_doc_comments)]
 #![no_std]
 
 pub mod gmod13;

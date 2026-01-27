@@ -2,13 +2,15 @@
 
 pub use crate::{
 	gmod13::{
-		cppdef::{
-			CFunc as LuaCFunc,
-			Special as LuaSpecial,
-			Type as LuaType,
-			StdType as LuaStdType,
+		func::{
+			Ctx as LuaCtx, Rets as LuaRets,
 		},
-		Lua, LuaRef,
+		Special as LuaSpecial,
+		Type as LuaType,
+		StdType as LuaStdType,
+		Lua, Ref,
+		Number as LuaNumber,
+		Bits as LuaBits,
 		upvalue_index as lua_upvalue_index,
 		Module as LuaModule,
 	},
@@ -16,6 +18,16 @@ pub use crate::{
 		Vector as SeVector,
 		QAngle as SeQAngle,
 	},
-	gmod13_lua_function,
-	gmod13_module, gmod13_module_from,
+	gmod13_fn,
+	gmod13_module, gmod13_module_with, gmod13_module_static,
+	gmod13_type,
+};
+
+#[cfg(feature = "user-types")]
+pub use crate::{
+	gmod13::user_types::{
+		UserType as LuaUserType,
+		SelfCtx as LuaSelfCtx,
+	},
+	gmod13_method,
 };

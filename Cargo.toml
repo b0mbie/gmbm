@@ -1,10 +1,26 @@
 [package]
 name = "gmbm"
-version = "0.3.2"
+version = "0.4.0"
 edition = "2024"
 description = "Write Garry's Mod Binary Modules in Rust"
 authors = ["b0mbie"]
 license = "MIT"
+
+[[example]]
+name = "bits"
+crate-type = ["cdylib"]
+
+[[example]]
+name = "hello"
+crate-type = ["cdylib"]
+
+[[example]]
+name = "user_types"
+crate-type = ["cdylib"]
+
+[features]
+default = ["user-types"]
+user-types = []
 
 [dependencies.cppdvt]
 git = "https://github.com/b0mbie/cppdvt.git"
