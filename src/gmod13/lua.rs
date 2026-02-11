@@ -17,9 +17,7 @@ use core::{
 		from_raw_parts_mut as slice_from_raw_parts_mut,
 	},
 };
-use cppdvt::{
-	VtObject, virtual_call,
-};
+use cpp_class::virtual_call;
 
 use crate::source::{
 	Vector, QAngle,
@@ -28,14 +26,12 @@ use crate::source::{
 use super::func::*;
 use super::*;
 
-type LuaBase = VtObject<LuaBaseVt>;
-
 /// Interface for the Lua environment of
 /// the same Garry's Mod version that uses `gmod13_open` and `gmod13_close` functions for binary modules.
 #[derive(Debug)]
 #[repr(transparent)]
 pub struct Lua {
-	object: UnsafeCell<LuaBase>,
+	luabase: UnsafeCell<LuaBase>,
 }
 
 impl Lua {
@@ -44,29 +40,27 @@ impl Lua {
 	/// # Safety
     /// `ptr` must be a valid Lua state from the Garry's Mod version this structure targets.
 	pub const unsafe fn from_mut_ptr<'a>(ptr: *mut LuaState) -> &'a mut Self {
-		unsafe { Self::from_object_mut(
-			VtObject::from_ptr_mut((*ptr).luabase)
-		) }
+		unsafe { Self::from_luabase_mut((*ptr).luabase.as_mut()) }
 	}
 
 	/// See [`LuaState`].
 	/// 
 	/// # Safety
     /// `object` must be a valid Lua state from the Garry's Mod version this structure targets.
-	const unsafe fn from_object(object: &LuaBase) -> &Self {
-		unsafe { &*(object as *const _ as *const _) }
+	const unsafe fn from_luabase(luabase: &LuaBase) -> &Self {
+		unsafe { &*(luabase as *const _ as *const _) }
 	}
 
 	/// See [`LuaState`].
 	/// 
 	/// # Safety
     /// `object` must be a valid Lua state from the Garry's Mod version this structure targets.
-	const unsafe fn from_object_mut(object: &mut LuaBase) -> &mut Self {
-		unsafe { &mut *(object as *mut _ as *mut _) }
+	const unsafe fn from_luabase_mut(luabase: &mut LuaBase) -> &mut Self {
+		unsafe { &mut *(luabase as *mut _ as *mut _) }
 	}
 
 	const fn luabase(&self) -> &LuaBase {
-		unsafe { &*self.object.get() }
+		unsafe { &*self.luabase.get() }
 	}
 
 	/// Returns the amount of values on the stack.
@@ -257,7 +251,7 @@ impl Lua {
 	/// and so the exact guarantees for `ptr` vary depending on the use-case.
 	/// Consider using full userdata instead if you can.
 	pub unsafe fn push_light_userdata<T>(&self, ptr: *mut T) {
-		virtual_call!(self.luabase() => push_userdata(ptr as *mut _))
+		unsafe { virtual_call!(self.luabase() => push_userdata(ptr as *mut _)) }
 	}
 
 	/// Frees the reference `lua_ref` if it is valid.
@@ -367,7 +361,7 @@ impl Lua {
 	/// but is also a valid assumption if the pointee is currently on the Lua stack.
 	pub const unsafe fn with_no_gc(&self) -> WithNoGc<'_> {
 		WithNoGc {
-			luabase: unsafe { &mut *self.object.get() },
+			luabase: unsafe { &mut *self.luabase.get() },
 		}
 	}
 }
@@ -554,7 +548,7 @@ impl Lua {
 	/// it is valid at least until the call to its finalizer.
 	/// Do not use the returned pointer outside of these two specific circumstances!
 	pub unsafe fn new_userdata_raw(&mut self, size: c_uint) -> *mut c_void {
-		virtual_call!(self.luabase() => new_userdata(size))
+		unsafe { virtual_call!(self.luabase() => new_userdata(size)) }
 	}
 
 	/// Allocates a new Lua userdata of the specified `size`,
@@ -741,10 +735,10 @@ impl DerefMut for WithNoGc<'_> {
 
 impl WithNoGc<'_> {
 	const fn as_lua(&self) -> &Lua {
-		unsafe { Lua::from_object(self.luabase) }
+		unsafe { Lua::from_luabase(self.luabase) }
 	}
 
 	const fn as_lua_mut(&mut self) -> &mut Lua {
-		unsafe { Lua::from_object_mut(self.luabase) }
+		unsafe { Lua::from_luabase_mut(self.luabase) }
 	}
 }

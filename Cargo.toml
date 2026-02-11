@@ -22,6 +22,6 @@ crate-type = ["cdylib"]
 default = ["user-types"]
 user-types = []
 
-[dependencies.cppdvt]
-git = "https://github.com/b0mbie/cppdvt.git"
-version = "0.8.0"
+[dependencies.cpp-class]
+git = "https://github.com/b0mbie/cpp-class.git"
+version = "0.1.0"
