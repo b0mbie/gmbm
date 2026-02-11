@@ -1,6 +1,5 @@
 use core::{
 	cell::UnsafeCell,
-	cmp::Ordering,
 	error::Error,
 	ffi::{
 		CStr,
@@ -597,14 +596,12 @@ impl Lua {
 	/// The inner Lua state may raise an [error](crate::errors).
 	pub fn set_top(&self, top: c_uint) {
 		let current_top = self.top();
-		match top.cmp(&current_top) {
-			Ordering::Less => self.pop(current_top - top),
-			Ordering::Greater => { 
-				for _ in 0..top - current_top {
-					self.push_nil();
-				}
+		if let Some(to_push) = top.checked_sub(current_top) {
+			for _ in 0..to_push {
+				self.push_nil();
 			}
-			Ordering::Equal => {}
+		} else if let Some(to_pop) = current_top.checked_sub(top) {
+			self.pop(to_pop)
 		}
 	}
 
