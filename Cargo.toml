@@ -15,6 +15,10 @@ name = "hello"
 crate-type = ["cdylib"]
 
 [[example]]
+name = "multirealm"
+crate-type = ["cdylib"]
+
+[[example]]
 name = "user_types"
 crate-type = ["cdylib"]
 
