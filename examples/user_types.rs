@@ -34,6 +34,8 @@ struct MyType {
 	pub x: LuaNumber,
 	pub y: LuaNumber,
 }
+// This impl is required for the `__gc` metamethod to be created automatically,
+// since there are no fields which need destruction otherwise.
 impl Drop for MyType {
 	fn drop(&mut self) {}
 }
