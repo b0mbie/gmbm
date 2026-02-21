@@ -92,8 +92,8 @@ impl<T> DerefMut for SelfCtx<'_, T> {
 macro_rules! gmod13_method {
 	($T:ty => $lua:pat => $body:block) => {{
 		extern "C-unwind" fn __gmod13_method_inline(
-				cx: $crate::gmod13::user_types::MethodFuncCtx<'_, $T>,
-			) -> $crate::gmod13::func::Rets {
+			cx: $crate::gmod13::user_types::MethodFuncCtx<'_, $T>,
+		) -> $crate::gmod13::func::Rets {
 			let $lua = cx.lua();
 			<$crate::gmod13::func::Rets as ::core::convert::From<_>>::from($body)
 		}
