@@ -28,4 +28,4 @@ user-types = []
 
 [dependencies.cpp-class]
 git = "https://github.com/b0mbie/cpp-class.git"
-version = "0.1.0"
+version = "0.1.1"
