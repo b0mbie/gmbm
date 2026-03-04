@@ -1,6 +1,6 @@
 [package]
 name = "gmbm"
-version = "0.5.2"
+version = "0.5.3"
 edition = "2024"
 description = "Write Garry's Mod Binary Modules in Rust"
 authors = ["b0mbie"]
@@ -23,9 +23,17 @@ name = "user_types"
 crate-type = ["cdylib"]
 
 [features]
-default = ["user-types"]
+default = ["user-types", "rse-math"]
+# Include UserType support.
 user-types = []
+# Use `Vector` and `QAngle` definitions provided by the `rse-math` crate.
+rse-math = ["dep:rse-math"]
 
 [dependencies.cpp-class]
 git = "https://github.com/b0mbie/cpp-class.git"
 version = "0.1.1"
+
+[dependencies.rse-math]
+git = "https://github.com/b0mbie/rust-source-engine.git"
+version = "0.1.0"
+optional = true
