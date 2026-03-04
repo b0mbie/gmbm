@@ -1,8 +1,14 @@
 # gmbm
-Rust crate that allows one to write Garry's Mod Binary Modules in Rust without linking to LuaJIT at run-time,
+Rust crate that allows one to write Garry's Mod Binary Modules in Rust without linking to LuaJIT,
 instead only using the API that Garry's Mod itself provides.
 
-## Prior art
+# Features
+This crate:
+- is entirely `#![no_std]`;
+- maps pretty closely to the Lua interface provided by Garry's Mod;
+- supports *UserTypes*.
+
+# Prior art
 The first crate to provide an interface to Garry's Mod was
 [`WilliamVenner/gmod-rs`](https://github.com/WilliamVenner/gmod-rs).
 It searches for and loads the `lua_shared` dynamic library that comes with Garry's Mod in order to interface with the
