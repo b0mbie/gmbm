@@ -118,6 +118,7 @@ impl Lua {
 	pub unsafe fn create_user_type<'a, T: UserType, F: FnOnce(&mut MaybeUninit<T>)>(
 		&mut self, ty: Type, init: F,
 	) -> Option<&'a mut T> {
+		#[repr(C)]
 		struct RawUdOf<T> {
 			pub ud: RawUd,
 			pub value: T,
@@ -246,6 +247,7 @@ fn push_registry_key<T: UserType>(lua: &Lua) {
 }
 
 /// Raw header for userdata allocated in a Lua state.
+#[repr(C)]
 pub struct RawUd {
 	pub data: *mut c_void,
 	pub ty: c_uchar,
