@@ -1,6 +1,6 @@
 [package]
 name = "gmbm"
-version = "0.5.4"
+version = "0.5.5"
 edition = "2024"
 description = "Write Garry's Mod Binary Modules in Rust"
 authors = ["b0mbie"]
@@ -23,7 +23,7 @@ name = "user_types"
 crate-type = ["cdylib"]
 
 [features]
-default = ["user-types", "rse-math"]
+default = ["user-types"]
 # Include UserType support.
 user-types = []
 # Use `Vector` and `QAngle` definitions provided by the `rse-math` crate.
